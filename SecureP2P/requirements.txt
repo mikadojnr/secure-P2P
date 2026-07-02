@@ -1,0 +1,8 @@
+PyQt6
+cryptography
+pyzstd
+zeroconf
+aiohttp
+netifaces
+psutil
+pyside6-recommended

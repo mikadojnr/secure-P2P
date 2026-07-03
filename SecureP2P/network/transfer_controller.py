@@ -155,6 +155,8 @@ class TransferController:
                 }
                 await conn.send_message(MSG_TYPE_FILE_ACK, json.dumps(ack).encode())
                 return
+            if transfer.compressed:
+                chunk_bytes = self._compressor.decompress(chunk_bytes)
             self._chunk_manager.receive_chunk(transfer_id, chunk_index, chunk_bytes)
             transfer.bytes_transferred += len(chunk_bytes)
             transfer.progress = (transfer.bytes_transferred / transfer.bytes_total * 100) if transfer.bytes_total > 0 else 0

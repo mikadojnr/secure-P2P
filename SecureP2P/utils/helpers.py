@@ -54,7 +54,7 @@ def format_speed(bytes_per_sec: UnionType[int, float]) -> str:
 
 
 def get_local_ip() -> str:
-    """Get primary local IP address."""
+    """Get primary local IPv4 address."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -62,7 +62,18 @@ def get_local_ip() -> str:
         s.close()
         return ip
     except Exception:
-        return "127.0.0.1"
+        pass
+
+    try:
+        import psutil
+        for name, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.family == socket.AF_INET and not addr.address.startswith("127."):
+                    return addr.address
+    except Exception:
+        pass
+
+    return "127.0.0.1"
 
 
 def get_mac_address() -> str:

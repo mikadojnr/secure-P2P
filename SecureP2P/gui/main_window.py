@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import socket
+import sys
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -52,6 +53,7 @@ class MainWindow(QMainWindow):
     transfer_complete_signal = pyqtSignal(str, str, str)
     incoming_transfer_signal = pyqtSignal(str, str, str, int, str)
     log_signal = pyqtSignal(str, str)
+    firewall_warning_signal = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -232,6 +234,7 @@ class MainWindow(QMainWindow):
         self.transfer_complete_signal.connect(self._on_transfer_complete_gui)
         self.incoming_transfer_signal.connect(self._on_incoming_transfer_gui)
         self.log_signal.connect(self._on_log_gui)
+        self.firewall_warning_signal.connect(self._on_firewall_warning_gui)
 
         self._peer_discovery.set_callbacks(
             on_peer_found=self._on_peer_found,
@@ -321,6 +324,11 @@ class MainWindow(QMainWindow):
         else:
             self.log_signal.emit("WARNING",
                 f"Firewall rules not added (run as Admin to enable): {fw_msg}")
+            if sys.platform == "win32":
+                self.firewall_warning_signal.emit(
+                    f"Incoming connections may be blocked by Windows Defender Firewall.\n\n"
+                    f"Please restart the application as Administrator to allow SecureP2P "
+                    f"through the firewall.\n\nDetails: {fw_msg}")
         await self._peer_discovery.start(self._server_port)
         await self._transfer_controller.start()
         asyncio.create_task(self._connection_manager.health_check())
@@ -473,6 +481,10 @@ class MainWindow(QMainWindow):
 
     def _on_log_gui(self, level: str, message: str) -> None:
         self._log_viewer.append_log(level, message)
+
+    def _on_firewall_warning_gui(self, message: str) -> None:
+        self._status_label.setText("Firewall blocking connections — run as Admin")
+        QMessageBox.warning(self, "Firewall Blocking Connections", message)
 
     # --- GUI signal handlers (GUI thread) ---
 
